@@ -297,10 +297,10 @@ cd fullstack-assignment
 Verify `.env` in the root directory contains your MongoDB URI:
 
 ```env
-MONGODB_URI=mongodb://arnav:wJB6s7rds7yIPKVh@ac-1nysf1w-shard-00-00.ajggrve.mongodb.net:27017,ac-1nysf1w-shard-00-01.ajggrve.mongodb.net:27017,ac-1nysf1w-shard-00-02.ajggrve.mongodb.net:27017/?ssl=true&replicaSet=atlas-5wa56h-shard-0&authSource=admin&appName=Cluster0
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/taskflow
 PORT=8000
 NEXT_PUBLIC_API_URL=http://localhost:8000
-JWT_SECRET=taskflow-super-secret-jwt-key-2026
+JWT_SECRET=your-super-secret-jwt-key
 ```
 
 ### 4. Install Dependencies

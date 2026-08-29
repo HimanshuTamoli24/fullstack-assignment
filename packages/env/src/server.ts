@@ -21,12 +21,7 @@ if (envPath) {
 }
 
 const envSchema = z.object({
-  MONGODB_URI: z
-    .string()
-    .min(1)
-    .default(
-      "mongodb://arnav:wJB6s7rds7yIPKVh@ac-1nysf1w-shard-00-00.ajggrve.mongodb.net:27017,ac-1nysf1w-shard-00-01.ajggrve.mongodb.net:27017,ac-1nysf1w-shard-00-02.ajggrve.mongodb.net:27017/?ssl=true&replicaSet=atlas-5wa56h-shard-0&authSource=admin&appName=Cluster0",
-    ),
+  MONGODB_URI: z.string().min(1, "MONGODB_URI environment variable is required"),
   DATABASE_URL: z.string().optional(),
 
   NODE_ENV: z.enum(["development", "production", "prod", "test"]).default("development"),
