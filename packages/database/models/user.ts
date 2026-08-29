@@ -1,28 +1,50 @@
-import { boolean, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
-export const usersTable = pgTable("users", {
-  // Same UUID as auth.users.id
-  id: uuid("id").primaryKey(),
+export interface IUser extends Document {
+  _id: mongoose.Types.ObjectId;
+  fullName: string;
+  email: string;
+  password?: string;
+  salt?: string;
+  role: "ADMIN" | "MEMBER";
+  avatarUrl?: string;
+  jobTitle?: string;
+  department?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-  fullName: varchar("full_name", { length: 80 }),
+const UserSchema = new Schema<IUser>(
+  {
+    fullName: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
+    password: { type: String, required: true },
+    salt: { type: String, required: true },
+    role: { type: String, enum: ["ADMIN", "MEMBER"], default: "MEMBER", index: true },
+    avatarUrl: { type: String, default: "" },
+    jobTitle: { type: String, default: "Team Member" },
+    department: { type: String, default: "Engineering" },
+  },
+  {
+    timestamps: true,
+    collection: "taskflow_users",
+  },
+);
 
-  email: varchar("email", { length: 255 }).notNull().unique(),
-
-  profileImageUrl: text("profile_image_url"),
-
-  plan: varchar("plan", { length: 30 }).notNull().default("free"),
-
-  credits: integer("credits").notNull().default(3),
-
-  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
-
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-
-  updatedAt: timestamp("updated_at")
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
+// Virtual for id string
+UserSchema.virtual("id").get(function () {
+  return this._id.toHexString();
 });
 
-export type SelectUser = typeof usersTable.$inferSelect;
-export type InsertUser = typeof usersTable.$inferInsert;
+UserSchema.set("toJSON", {
+  virtuals: true,
+  transform: (_, ret: any) => {
+    delete ret.__v;
+    delete ret.password;
+    delete ret.salt;
+    return ret;
+  },
+});
+
+export const UserModel: Model<IUser> =
+  mongoose.models.TaskFlowUser || mongoose.model<IUser>("TaskFlowUser", UserSchema);
