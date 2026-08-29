@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: trpc-monorepo-api
+    runtime: node
+    rootDir: apps/api
+    buildCommand: cd ../.. && pnpm install --frozen-lockfile --prod=false && pnpm run build --filter=@repo/api
+    startCommand: node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: BETTER_AUTH_URL
+        sync: false
