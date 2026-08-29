@@ -2,6 +2,12 @@
   "name": "@repo/trpc",
   "version": "1.0.0",
   "private": true,
+  "main": "./server/index.ts",
+  "types": "./server/index.ts",
+  "exports": {
+    "./server": "./server/index.ts",
+    "./client": "./client/index.ts"
+  },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
@@ -10,6 +16,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@repo/database": "workspace:*",
     "@repo/env": "workspace:^",
     "@repo/services": "workspace:*",
     "@repo/validators": "workspace:*",

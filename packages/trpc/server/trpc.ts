@@ -120,3 +120,21 @@ const isAuthenticated = tRPCContext.middleware(({ ctx, next }) => {
 });
 
 export const protectedProcedure = tRPCContext.procedure.use(isAuthenticated);
+
+const isAdmin = tRPCContext.middleware(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "You must be logged in to access this resource.",
+    });
+  }
+  if (ctx.user.role !== "ADMIN") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Access restricted. Admin privileges required.",
+    });
+  }
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
+
+export const adminProcedure = tRPCContext.procedure.use(isAdmin);
