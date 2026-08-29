@@ -7,18 +7,80 @@
 [![Turborepo](https://img.shields.io/badge/Monorepo-Turborepo-000000.svg?style=flat-square&logo=turborepo)](https://turbo.build/)
 [![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind%20CSS%20v4-38B2AC.svg?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
 
-A production-grade, full-stack **Team Project & Task Management Application** engineered with **MongoDB Atlas**, **Next.js (App Router)**, **tRPC**, **Express (OpenAPI/Scalar)**, and **shadcn/ui**. Features role-based access control (Admin vs Team Member), interactive Kanban and table views, real-time progress metrics, and a dedicated **Deadline Revision Audit Trail** with timeline visualization.
+A production-grade, full-stack **Team Project & Task Management Application** engineered with **MongoDB Atlas**, **Next.js 16 (App Router)**, **tRPC**, **Express (OpenAPI/Scalar)**, and **shadcn/ui**. Features role-based access control (Admin vs Team Member), interactive Kanban and table views, real-time progress metrics, and a dedicated **Deadline Revision Audit Trail** with timeline visualization.
 
 ---
 
 ## 🔗 Repository & Deployment Links
 
 - **GitHub Repository**: [https://github.com/HimanshuTamoli24/fullstack-assignment](https://github.com/HimanshuTamoli24/fullstack-assignment)
-- **Interactive OpenAPI Reference**: `http://localhost:8000/docs` (Scalar API UI)
+- **Interactive OpenAPI Reference**: `http://localhost:8000/docs` (Scalar API Reference UI)
 
 ---
 
-## 🎯 Features Breakdown
+## 📸 Application Previews & Core Features
+
+### 1. 📊 Executive Dashboard & Progress Analytics
+
+The central hub for tracking high-level workspace health, completion rates, active project milestones, overdue deliverables, and a live audit activity stream.
+
+![Dashboard Overview](docs/images/dashboard_overview.jpg)
+
+**Key Capabilities:**
+
+- **Metric Cards**: Real-time counters for Active Projects, Total Tasks, My Assigned Tasks, Completion Rate %, and Overdue Deliverables.
+- **Active Project Progress**: Visual completion percentage bars with status distribution counters (`Done`, `In Progress`, `In Review`, `To Do`).
+- **Live Audit Activity Stream**: Real-time chronological audit trail of all actions performed across the organization.
+- **1-Click Persona Switcher**: Seamlessly switch between Admin and Team Member evaluation accounts directly from the top banner.
+
+---
+
+### 2. 📋 Interactive Kanban Workflow Board
+
+A dynamic board enabling team members and administrators to visualize task stages, priorities, and deadlines at a glance.
+
+![Kanban Board](docs/images/kanban_board.jpg)
+
+**Key Capabilities:**
+
+- **4 Stage Workflow**: `To Do`, `In Progress`, `In Review`, and `Completed`.
+- **Informative Task Cards**: Displays colored project tags, priority pills (`🚨 Urgent`, `⚡ High`, `🔹 Med`, `☕ Low`), assignee avatars, deadline date badges, and **Deadline Revision Pill Indicators** (e.g. `⏱️ 2 revisions`).
+- **Quick Status Advancement**: 1-click button to advance tasks through workflow stages.
+- **Direct Modal Trigger**: Click any card to inspect full specifications, comments, and deadline history.
+
+---
+
+### 3. ⭐ The Additional Challenge: Task Deadline Revision History Timeline
+
+When a project deadline is modified by an administrator, the platform permanently preserves an immutable audit snapshot with previous date, new date, user attribution, timestamp, and reasoning.
+
+![Deadline Revision History Modal](docs/images/deadline_history_modal.jpg)
+
+**Key Capabilities:**
+
+- **Audit Revision Storage**: Embedded MongoDB history array storing `{ previousDeadline, newDeadline, changedBy, changedByName, changedAt, reason }`.
+- **Interactive Timeline Visualization**: Renders chronological milestone nodes showing previous date ➔ updated date transition.
+- **Modification Reasoning**: Explicit reason callout box (e.g., _"Scope extension requested by client"_).
+- **Differential Tagging**: Automatic calculation of adjustment duration (e.g., `+4 Days Extension` or `Accelerated by 2 Days`).
+- **Audit Activity Log**: Automatically triggers a `DEADLINE_CHANGED` entry in the workspace activity feed.
+
+---
+
+### 4. 🗂️ Project Initiatives & Team Management
+
+High-level management of company initiatives, deliverable deadlines, and team workload allocation.
+
+![Projects View](docs/images/projects_view.jpg)
+
+**Key Capabilities:**
+
+- **Project Initiative Cards**: Color-coded project cards with completion progress percentages, milestone delivery dates, and description goals.
+- **Team Allocation**: Add, remove, and assign team members to specific projects.
+- **Quick Filter & Creation**: Filter task board by clicking any project initiative, or quickly add new deliverables directly from the card.
+
+---
+
+## 🎯 Role-Based Features Breakdown
 
 ### 👑 Admin Features
 
@@ -36,24 +98,18 @@ A production-grade, full-stack **Team Project & Task Management Application** en
 - **Post Progress Updates & Comments**: Real-time collaborative discussion thread on tasks.
 - **Inspect Deadlines & Priorities**: Immediate visibility into upcoming due dates with overdue warnings.
 
-### ⭐ Additional Challenge: Task Deadline Revision History
+---
 
-When a task deadline is adjusted:
+## 👥 Pre-Seeded Test Accounts
 
-1. The backend automatically records a historical revision snapshot in MongoDB (`previousDeadline`, `newDeadline`, `changedBy`, `changedByName`, `changedAt`, `reason`).
-2. Logs an audit activity entry in the activity trail.
-3. The frontend displays a dedicated **"Deadlines Revision History" Timeline** modal tab:
-   - Visual nodes connecting the previous target date ➔ new target date.
-   - Author avatar, name, and exact timestamp of change.
-   - Reason for adjustment (e.g., _"Scope extension requested by client"_).
-   - Calculated differential tag (e.g., `+4 Days Extension`).
+You can log in manually or use the **1-Click Persona Switcher** in the top navigation bar:
 
-### 🚀 Bonus & Enhanced Features
-
-- **Instant 1-Click Persona Switcher**: Test Admin and Team Member permissions instantly with pre-seeded accounts.
-- **Interactive Kanban Board**: 4-column drag/advance board with priority indicators and deadline revision pills.
-- **Multi-Faceted Search & Filtering**: Filter by project, status, priority, assignee, and full-text keyword search.
-- **Live Audit Activity Feed**: Workspace-wide stream of all status changes, assignments, and revisions.
+| Name              | Role     | Email                       | Password     | Job Title / Department                 |
+| :---------------- | :------- | :-------------------------- | :----------- | :------------------------------------- |
+| **Alex Rivera**   | `ADMIN`  | `alex.admin@taskflow.dev`   | `Admin@123`  | Lead Engineering Manager (Engineering) |
+| **Sarah Chen**    | `MEMBER` | `sarah.chen@taskflow.dev`   | `Member@123` | Senior Frontend Engineer (Engineering) |
+| **Marcus Vance**  | `MEMBER` | `marcus.vance@taskflow.dev` | `Member@123` | Cloud Architect (Infrastructure)       |
+| **Elena Rostova** | `MEMBER` | `elena.design@taskflow.dev` | `Member@123` | Lead Product Designer (Design)         |
 
 ---
 
@@ -221,26 +277,13 @@ All procedures support tRPC client calls and REST / OpenAPI endpoints:
 
 ---
 
-## 👥 Pre-Seeded Test Accounts
-
-You can log in manually or use the **1-Click Persona Switcher** in the top navigation bar:
-
-| Name              | Role     | Email                       | Password     | Job Title / Department                 |
-| :---------------- | :------- | :-------------------------- | :----------- | :------------------------------------- |
-| **Alex Rivera**   | `ADMIN`  | `alex.admin@taskflow.dev`   | `Admin@123`  | Lead Engineering Manager (Engineering) |
-| **Sarah Chen**    | `MEMBER` | `sarah.chen@taskflow.dev`   | `Member@123` | Senior Frontend Engineer (Engineering) |
-| **Marcus Vance**  | `MEMBER` | `marcus.vance@taskflow.dev` | `Member@123` | Cloud Architect (Infrastructure)       |
-| **Elena Rostova** | `MEMBER` | `elena.design@taskflow.dev` | `Member@123` | Lead Product Designer (Design)         |
-
----
-
 ## 🚀 Installation & Local Setup
 
 ### 1. Prerequisites
 
 - **Node.js** >= 18.0.0
 - **pnpm** >= 9.0.0 (`npm install -g pnpm`)
-- **MongoDB Atlas** connection string (pre-configured in `.env`)
+- **MongoDB Atlas** connection string (configured in `.env`)
 
 ### 2. Clone the Repository
 
@@ -311,6 +354,8 @@ pnpm build
 │       ├── components/         # KanbanBoard, TaskDetailModal, TaskList, Nav, etc.
 │       ├── context/            # AuthContext & Demo Persona manager
 │       └── trpc/               # React Query & tRPC client bindings
+├── docs/
+│   └── images/                 # Preview screenshots (Dashboard, Kanban, Deadlines, Projects)
 ├── packages/
 │   ├── database/               # Mongoose models (User, Project, Task, Comment, Activity) & seed script
 │   ├── env/                    # Type-safe environment validation with Zod
