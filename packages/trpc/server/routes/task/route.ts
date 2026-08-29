@@ -26,6 +26,7 @@ export const taskRouter = router({
         })
         .optional(),
     )
+    .output(z.array(z.any()))
     .query(async ({ input }) => {
       const tasks = await taskService.listTasks(input);
       return tasks;
@@ -34,6 +35,7 @@ export const taskRouter = router({
   getById: protectedProcedure
     .meta({ openapi: { method: "GET", path: getPath("/:id"), tags: TAGS } })
     .input(z.object({ id: z.string() }))
+    .output(z.any())
     .query(async ({ input }) => {
       return taskService.getTaskById(input.id);
     }),
@@ -41,6 +43,7 @@ export const taskRouter = router({
   create: adminProcedure
     .meta({ openapi: { method: "POST", path: getPath(""), tags: TAGS } })
     .input(createTaskInput)
+    .output(z.any())
     .mutation(async ({ input, ctx }) => {
       return taskService.createTask(input, ctx.user!.id, ctx.user!.fullName);
     }),
@@ -48,6 +51,7 @@ export const taskRouter = router({
   updateStatus: protectedProcedure
     .meta({ openapi: { method: "PATCH", path: getPath("/:taskId/status"), tags: TAGS } })
     .input(updateTaskStatusInput)
+    .output(z.any())
     .mutation(async ({ input, ctx }) => {
       return taskService.updateTaskStatus(
         input.taskId,
@@ -63,6 +67,7 @@ export const taskRouter = router({
   updateDeadline: adminProcedure
     .meta({ openapi: { method: "PATCH", path: getPath("/:taskId/deadline"), tags: TAGS } })
     .input(updateTaskDeadlineInput)
+    .output(z.any())
     .mutation(async ({ input, ctx }) => {
       return taskService.updateTaskDeadline(
         input.taskId,
@@ -76,6 +81,7 @@ export const taskRouter = router({
   updateDetails: adminProcedure
     .meta({ openapi: { method: "PATCH", path: getPath("/:taskId/details"), tags: TAGS } })
     .input(updateTaskInput)
+    .output(z.any())
     .mutation(async ({ input, ctx }) => {
       return taskService.updateTaskDetails(input, ctx.user!.id, ctx.user!.fullName);
     }),
@@ -83,6 +89,7 @@ export const taskRouter = router({
   delete: adminProcedure
     .meta({ openapi: { method: "DELETE", path: getPath("/:taskId"), tags: TAGS } })
     .input(z.object({ taskId: z.string() }))
+    .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input }) => {
       return taskService.deleteTask(input.taskId);
     }),

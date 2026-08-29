@@ -10,6 +10,7 @@ export const projectRouter = router({
   list: protectedProcedure
     .meta({ openapi: { method: "GET", path: getPath(""), tags: TAGS } })
     .input(z.void())
+    .output(z.array(z.any()))
     .query(async ({ ctx }) => {
       const projects = await projectService.listProjects(ctx.user!.id, ctx.user!.role);
       return projects;
@@ -18,6 +19,7 @@ export const projectRouter = router({
   getById: protectedProcedure
     .meta({ openapi: { method: "GET", path: getPath("/:id"), tags: TAGS } })
     .input(z.object({ id: z.string() }))
+    .output(z.any())
     .query(async ({ input }) => {
       return projectService.getProjectById(input.id);
     }),
@@ -25,6 +27,7 @@ export const projectRouter = router({
   create: adminProcedure
     .meta({ openapi: { method: "POST", path: getPath(""), tags: TAGS } })
     .input(createProjectInput)
+    .output(z.any())
     .mutation(async ({ input, ctx }) => {
       return projectService.createProject(input, ctx.user!.id, ctx.user!.fullName);
     }),
@@ -37,6 +40,7 @@ export const projectRouter = router({
         memberId: z.string(),
       }),
     )
+    .output(z.any())
     .mutation(async ({ input, ctx }) => {
       return projectService.addMemberToProject(
         input.projectId,

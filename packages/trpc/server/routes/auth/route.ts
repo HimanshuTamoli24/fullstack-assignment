@@ -20,6 +20,7 @@ export const authRouter = router({
         department: z.string().optional(),
       }),
     )
+    .output(z.object({ user: z.any(), token: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const { user, token } = await userService.createUserWithEmailAndPassword(input);
       setAuthenticationCookie(ctx, token);
@@ -34,6 +35,7 @@ export const authRouter = router({
         password: z.string().min(1),
       }),
     )
+    .output(z.object({ user: z.any(), token: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const { user, token } = await userService.loginWithEmailAndPassword(input);
       setAuthenticationCookie(ctx, token);
@@ -43,6 +45,7 @@ export const authRouter = router({
   getMe: protectedProcedure
     .meta({ openapi: { method: "GET", path: getPath("/me"), tags: TAGS } })
     .input(z.void())
+    .output(z.any().nullable())
     .query(async ({ ctx }) => {
       if (!ctx.user) return null;
       const user = await userService.getUserById(ctx.user.id);
@@ -52,6 +55,7 @@ export const authRouter = router({
   getDemoUsers: publicProcedure
     .meta({ openapi: { method: "GET", path: getPath("/demo-users"), tags: TAGS } })
     .input(z.void())
+    .output(z.array(z.any()))
     .query(async () => {
       const demoUsers = await userService.getQuickDemoUsers();
       return demoUsers;
@@ -60,6 +64,7 @@ export const authRouter = router({
   quickDemoLogin: publicProcedure
     .meta({ openapi: { method: "POST", path: getPath("/quick-demo-login"), tags: TAGS } })
     .input(z.object({ userId: z.string() }))
+    .output(z.object({ user: z.any(), token: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const user = await userService.getUserById(input.userId);
       if (!user) throw new Error("Demo user not found");
@@ -89,6 +94,7 @@ export const authRouter = router({
   logout: publicProcedure
     .meta({ openapi: { method: "POST", path: getPath("/logout"), tags: TAGS } })
     .input(z.void())
+    .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx }) => {
       clearAuthenticationCookie(ctx);
       return { success: true };

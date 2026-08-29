@@ -10,6 +10,7 @@ export const userRouter = router({
   list: protectedProcedure
     .meta({ openapi: { method: "GET", path: getPath(""), tags: TAGS } })
     .input(z.void())
+    .output(z.array(z.any()))
     .query(async () => {
       const users = await userService.listAllUsers();
       return users;
