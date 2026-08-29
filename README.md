@@ -1,258 +1,332 @@
-# Base tRPC Monorepo Boilerplate
+# ⚡ TaskFlow — Team Project & Task Management Application
 
-[![Turborepo](https://img.shields.io/badge/built%20with-Turborepo-000000.svg?style=flat-square&logo=turborepo)](https://turbo.build/)
-[![tRPC](https://img.shields.io/badge/API-tRPC-2563EB.svg?style=flat-square&logo=trpc)](https://trpc.io/)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB%20Atlas-47A248.svg?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js%2016-000000.svg?style=flat-square&logo=nextdotjs)](https://nextjs.org/)
-[![Drizzle ORM](https://img.shields.io/badge/Database-Drizzle%20ORM-C5F74F.svg?style=flat-square&logo=postgresql)](https://orm.drizzle.team/)
-[![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![tRPC](https://img.shields.io/badge/API-tRPC%20v11-2563EB.svg?style=flat-square&logo=trpc)](https://trpc.io/)
+[![TypeScript](https://img.shields.io/badge/Language-TypeScript%205.9-3178C6.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Turborepo](https://img.shields.io/badge/Monorepo-Turborepo-000000.svg?style=flat-square&logo=turborepo)](https://turbo.build/)
+[![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind%20CSS%20v4-38B2AC.svg?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
 
-An enterprise-ready, robust starter monorepo implementing end-to-end type safety with tRPC, Next.js, and Express. It uses Turborepo for workspace orchestration, Drizzle ORM for PostgreSQL database modeling, and a highly structured shared library pattern.
+A production-grade, full-stack **Team Project & Task Management Application** engineered with **MongoDB Atlas**, **Next.js (App Router)**, **tRPC**, **Express (OpenAPI/Scalar)**, and **shadcn/ui**. Features role-based access control (Admin vs Team Member), interactive Kanban and table views, real-time progress metrics, and a dedicated **Deadline Revision Audit Trail** with timeline visualization.
 
 ---
 
-## 📐 Architecture Overview
+## 🔗 Repository & Deployment Links
 
-The workspace follows a strict division of concerns separating consumer applications, API routers, business services, and database schemas:
+- **GitHub Repository**: [https://github.com/HimanshuTamoli24/fullstack-assignment](https://github.com/HimanshuTamoli24/fullstack-assignment)
+- **Interactive OpenAPI Reference**: `http://localhost:8000/docs` (Scalar API UI)
+
+---
+
+## 🎯 Features Breakdown
+
+### 👑 Admin Features
+
+- **Create & Manage Projects**: Specify project name, description, brand color, start date, and target delivery milestone.
+- **Team Allocation**: Add and assign workspace team members to specific projects.
+- **Create & Assign Tasks**: Define task titles, rich descriptions, assignees, priorities (`LOW`, `MEDIUM`, `HIGH`, `URGENT`), initial deadlines, estimated hours, and tags.
+- **Set Priorities & Reassign**: Change priorities and task owners on demand.
+- **View Project Progress**: Interactive project completion rate charts, progress bars, and status distribution counters.
+- **Task Deletion & Management**: Complete administrative control over workspace deliverables.
+
+### 👤 Team Member Features
+
+- **View Assigned Deliverables**: Dedicated "My Assigned Tasks" filter and card badges.
+- **Update Task Status**: Advance tasks through workflow stages: `TODO` ➔ `IN_PROGRESS` ➔ `IN_REVIEW` ➔ `COMPLETED`.
+- **Post Progress Updates & Comments**: Real-time collaborative discussion thread on tasks.
+- **Inspect Deadlines & Priorities**: Immediate visibility into upcoming due dates with overdue warnings.
+
+### ⭐ Additional Challenge: Task Deadline Revision History
+
+When a task deadline is adjusted:
+
+1. The backend automatically records a historical revision snapshot in MongoDB (`previousDeadline`, `newDeadline`, `changedBy`, `changedByName`, `changedAt`, `reason`).
+2. Logs an audit activity entry in the activity trail.
+3. The frontend displays a dedicated **"Deadlines Revision History" Timeline** modal tab:
+   - Visual nodes connecting the previous target date ➔ new target date.
+   - Author avatar, name, and exact timestamp of change.
+   - Reason for adjustment (e.g., _"Scope extension requested by client"_).
+   - Calculated differential tag (e.g., `+4 Days Extension`).
+
+### 🚀 Bonus & Enhanced Features
+
+- **Instant 1-Click Persona Switcher**: Test Admin and Team Member permissions instantly with pre-seeded accounts.
+- **Interactive Kanban Board**: 4-column drag/advance board with priority indicators and deadline revision pills.
+- **Multi-Faceted Search & Filtering**: Filter by project, status, priority, assignee, and full-text keyword search.
+- **Live Audit Activity Feed**: Workspace-wide stream of all status changes, assignments, and revisions.
+
+---
+
+## 🏗️ System Architecture
 
 ```mermaid
 graph TD
-    %% Clients
-    WebClient[Next.js App Client /apps/web] -->|tRPC Client / Promise Proxy| TRPCExpressAdaptor
-    WebClient -->|Shared Components| UI[packages/ui UI Primitives]
+    %% User Interfaces
+    Admin[👑 Admin User] -->|Manages Projects, Assigns Tasks, Updates Deadlines| WebApp[Next.js App /apps/web]
+    Member[👤 Team Member] -->|Views Tasks, Advances Status, Adds Comments| WebApp
 
-    %% API Server
-    subgraph ExpressServer [Standalone API Layer]
-        TRPCExpressAdaptor[apps/api tRPC Adapter Middleware]
-        OpenApiRouter[apps/api OpenAPI Middleware]
-        DocsRouter[apps/api Docs Router /docs]
+    %% Frontend to Backend
+    WebApp -->|End-to-End Type-Safe tRPC Calls & JWT Auth| APILayer[tRPC Express Gateway /apps/api]
+    WebApp -->|UI Design Tokens| UIPackage[packages/ui shadcn primitives]
+
+    %% API Layer
+    subgraph BackendGateway [Backend API Layer]
+        APILayer --> AuthRouter[Auth Router]
+        APILayer --> ProjectRouter[Project Router]
+        APILayer --> TaskRouter[Task Router]
+        APILayer --> CommentRouter[Comment Router]
+        APILayer --> ActivityRouter[Activity Router]
+        APILayer --> OpenAPIDocs[Scalar OpenAPI Docs /docs]
     end
 
-    TRPCExpressAdaptor --> ServerRouter[packages/trpc API Router]
-    OpenApiRouter --> ServerRouter
-    DocsRouter -->|Scalar reference UI| OpenApiRouter
+    %% Services & Business Logic
+    AuthRouter --> UserService[packages/services UserService]
+    ProjectRouter --> ProjectService[packages/services ProjectService]
+    TaskRouter --> TaskService[packages/services TaskService]
+    CommentRouter --> CommentService[packages/services CommentService]
+    ActivityRouter --> ActivityService[packages/services ActivityService]
 
-    %% Shared libraries
-    subgraph SharedLibraries [Shared packages]
-        ServerRouter --> UserService[packages/services UserService]
-        UserService --> DBClient[packages/database Drizzle Client]
-        DBClient --> Postgres[(PostgreSQL Database)]
-
-        EnvConfig[packages/env Configuration]
-        LoggerConfig[packages/logger Winston logger]
-        Validators[packages/validators Zod Models]
+    %% Database Connection
+    subgraph DatabaseLayer [Database Layer - MongoDB Atlas]
+        UserService --> MongoDB[(MongoDB Atlas Cluster)]
+        ProjectService --> MongoDB
+        TaskService --> MongoDB
+        CommentService --> MongoDB
+        ActivityService --> MongoDB
     end
-
-    ServerRouter -.-> Validators
-    ServerRouter -.-> LoggerConfig
-    ServerRouter -.-> EnvConfig
-    WebClient -.-> EnvConfig
 ```
 
 ---
 
-## 🔄 Request Lifecycle
-
-How a typed call travels from the browser to Postgres and back:
-
-```mermaid
-flowchart LR
-    A[React Component] --> B[tRPC Client\nPromise Proxy]
-    B --> C{Express /trpc\nAdapter}
-    C --> D[isAuthenticated\nMiddleware]
-    D -->|JWT valid| E[Router Procedure]
-    D -->|JWT invalid| X[401 Error\nFormatter]
-    E --> F[Zod Input\nValidation]
-    F -->|valid| G[UserService]
-    F -->|invalid| Y[400 Error\nFormatter]
-    G --> H[Drizzle ORM]
-    H --> I[(PostgreSQL)]
-    I --> H --> G --> E --> C --> B --> A
-```
-
----
-
-## 🔐 Auth Sequence — Sign Up & Login
-
-```mermaid
-sequenceDiagram
-    actor U as User
-    participant W as Next.js Web (apps/web)
-    participant T as tRPC Client
-    participant API as Express /trpc (apps/api)
-    participant AR as auth Router
-    participant US as UserService
-    participant DB as Drizzle / PostgreSQL
-
-    U->>W: Submit signup form
-    W->>T: auth.signUp.mutate(payload)
-    T->>API: POST /trpc/auth.signUp
-    API->>AR: route to auth procedure
-    AR->>AR: validate payload (Zod)
-    AR->>US: createUserWithEmailAndPassword()
-    US->>US: hash password (HMAC + salt)
-    US->>DB: INSERT INTO usersTable
-    DB-->>US: new user row
-    US-->>AR: user record
-    AR->>AR: sign JWT (JWT_SECRET)
-    AR-->>API: Set-Cookie: token + user payload
-    API-->>T: 200 OK (typed response)
-    T-->>W: resolved promise
-    W-->>U: redirect to dashboard
-
-    Note over U,DB: Subsequent requests reuse the cookie JWT,<br/>verified by isAuthenticated middleware
-```
-
----
-
-## 🗄️ Database ER Diagram
+## 🗄️ Database Schema & Entity Relationship Diagram (ERD)
 
 ```mermaid
 erDiagram
-    USERS {
-        uuid id PK
+    TaskFlowUser ||--o{ TaskFlowProject : "owns / participates"
+    TaskFlowUser ||--o{ TaskFlowTask : "assigned to / creates"
+    TaskFlowUser ||--o{ TaskFlowComment : "authors"
+    TaskFlowUser ||--o{ TaskFlowActivity : "performs"
+
+    TaskFlowProject ||--o{ TaskFlowTask : "contains"
+    TaskFlowProject ||--o{ TaskFlowActivity : "tracks"
+
+    TaskFlowTask ||--o{ TaskFlowComment : "has"
+    TaskFlowTask ||--o{ TaskFlowActivity : "logs"
+    TaskFlowTask ||--o{ DeadlineHistory : "embeds revision snapshots"
+
+    TaskFlowUser {
+        ObjectId _id PK
         string fullName
         string email UK
-        string profileImageUrl
-        string plan
-        int credits
-        boolean onboardingCompleted
-        timestamp createdAt
-        timestamp updatedAt
+        string password
+        string salt
+        string role "ADMIN | MEMBER"
+        string avatarUrl
+        string jobTitle
+        string department
+        date createdAt
+        date updatedAt
+    }
+
+    TaskFlowProject {
+        ObjectId _id PK
+        string name
+        string description
+        string color
+        string status "PLANNING | ACTIVE | ON_HOLD | COMPLETED"
+        ObjectId ownerId FK
+        ObjectId[] memberIds FK
+        date startDate
+        date targetEndDate
+        date createdAt
+        date updatedAt
+    }
+
+    TaskFlowTask {
+        ObjectId _id PK
+        string title
+        string description
+        ObjectId projectId FK
+        ObjectId assigneeId FK
+        ObjectId creatorId FK
+        string priority "LOW | MEDIUM | HIGH | URGENT"
+        string status "TODO | IN_PROGRESS | IN_REVIEW | COMPLETED"
+        date deadline
+        DeadlineHistory[] deadlineHistory "Embedded Array"
+        number estimatedHours
+        string[] tags
+        date createdAt
+        date updatedAt
+    }
+
+    DeadlineHistory {
+        date previousDeadline
+        date newDeadline
+        ObjectId changedBy FK
+        string changedByName
+        date changedAt
+        string reason
+    }
+
+    TaskFlowComment {
+        ObjectId _id PK
+        ObjectId taskId FK
+        ObjectId authorId FK
+        string content
+        date createdAt
+        date updatedAt
+    }
+
+    TaskFlowActivity {
+        ObjectId _id PK
+        ObjectId taskId FK
+        ObjectId projectId FK
+        ObjectId userId FK
+        string userName
+        string type "TASK_CREATED | STATUS_CHANGED | DEADLINE_CHANGED | ..."
+        string details
+        object metadata
+        date createdAt
     }
 ```
 
-> `packages/database/models/user.ts` currently defines a single `usersTable`. As new tables are added (e.g. sessions, teams, invoices), extend this diagram with the corresponding relationships.
+---
+
+## 📡 API Documentation & tRPC Procedures Catalog
+
+All procedures support tRPC client calls and REST / OpenAPI endpoints:
+
+| Procedure / Route     | Method                              | Access Role   | Description                                                                          |
+| :-------------------- | :---------------------------------- | :------------ | :----------------------------------------------------------------------------------- |
+| `auth.register`       | `POST /api/auth/register`           | Public        | Register new Admin or Member account with JWT session.                               |
+| `auth.login`          | `POST /api/auth/login`              | Public        | Authenticate user credentials and return auth token.                                 |
+| `auth.quickDemoLogin` | `POST /api/auth/quick-demo-login`   | Public        | 1-click test login as any seeded persona.                                            |
+| `auth.getMe`          | `GET /api/auth/me`                  | Authenticated | Retrieve current session profile and role.                                           |
+| `auth.getDemoUsers`   | `GET /api/auth/demo-users`          | Public        | List seeded demo users for instant persona switching.                                |
+| `user.list`           | `GET /api/users`                    | Authenticated | List all workspace team members and profiles.                                        |
+| `project.list`        | `GET /api/projects`                 | Authenticated | List projects with aggregated progress and task metrics.                             |
+| `project.getById`     | `GET /api/projects/:id`             | Authenticated | Get project details, members, and task deliverable breakdown.                        |
+| `project.create`      | `POST /api/projects`                | **👑 Admin**  | Create a project with color, members, and target milestone.                          |
+| `project.addMember`   | `POST /api/projects/:id/members`    | **👑 Admin**  | Add team member to an existing project.                                              |
+| `task.list`           | `GET /api/tasks`                    | Authenticated | List tasks with filters (`projectId`, `assigneeId`, `status`, `priority`, `search`). |
+| `task.getById`        | `GET /api/tasks/:id`                | Authenticated | Retrieve task with comments, activity audit, and **deadline revision history**.      |
+| `task.create`         | `POST /api/tasks`                   | **👑 Admin**  | Create new task, assign team member, priority, and deadline.                         |
+| `task.updateStatus`   | `PATCH /api/tasks/:taskId/status`   | Authenticated | Advance status (`TODO`, `IN_PROGRESS`, `IN_REVIEW`, `COMPLETED`).                    |
+| `task.updateDeadline` | `PATCH /api/tasks/:taskId/deadline` | **👑 Admin**  | **Challenge Feature**: Revise deadline & record history snapshot with reason.        |
+| `task.updateDetails`  | `PATCH /api/tasks/:taskId/details`  | **👑 Admin**  | Update title, description, priority, assignee, tags.                                 |
+| `task.delete`         | `DELETE /api/tasks/:taskId`         | **👑 Admin**  | Remove task and its related comments and logs.                                       |
+| `comment.create`      | `POST /api/comments`                | Authenticated | Post comment or progress update to a task.                                           |
+| `comment.listByTask`  | `GET /api/comments/task/:taskId`    | Authenticated | Retrieve discussion thread for a task.                                               |
+| `activity.listRecent` | `GET /api/activities/recent`        | Authenticated | Get workspace-wide recent audit activity log.                                        |
 
 ---
 
-## 📂 Folder Structure & Package Mapping
+## 👥 Pre-Seeded Test Accounts
 
-```mermaid
-graph LR
-    Root[monorepo root] --> Apps[apps/]
-    Root --> Packages[packages/]
+You can log in manually or use the **1-Click Persona Switcher** in the top navigation bar:
 
-    Apps --> web[web — Next.js 16]
-    Apps --> api[api — Express + tRPC]
+| Name              | Role     | Email                       | Password     | Job Title / Department                 |
+| :---------------- | :------- | :-------------------------- | :----------- | :------------------------------------- |
+| **Alex Rivera**   | `ADMIN`  | `alex.admin@taskflow.dev`   | `Admin@123`  | Lead Engineering Manager (Engineering) |
+| **Sarah Chen**    | `MEMBER` | `sarah.chen@taskflow.dev`   | `Member@123` | Senior Frontend Engineer (Engineering) |
+| **Marcus Vance**  | `MEMBER` | `marcus.vance@taskflow.dev` | `Member@123` | Cloud Architect (Infrastructure)       |
+| **Elena Rostova** | `MEMBER` | `elena.design@taskflow.dev` | `Member@123` | Lead Product Designer (Design)         |
 
-    Packages --> trpc[trpc — routers/client]
-    Packages --> database[database — Drizzle ORM]
-    Packages --> services[services — business logic]
-    Packages --> env[env — Zod env config]
-    Packages --> logger[logger — Winston]
-    Packages --> ui[ui — component library]
-    Packages --> validators[validators — Zod schemas]
-    Packages --> tsconfig[typescript-config]
-    Packages --> eslintconfig[eslint-config]
+---
+
+## 🚀 Installation & Local Setup
+
+### 1. Prerequisites
+
+- **Node.js** >= 18.0.0
+- **pnpm** >= 9.0.0 (`npm install -g pnpm`)
+- **MongoDB Atlas** connection string (pre-configured in `.env`)
+
+### 2. Clone the Repository
+
+```bash
+git clone https://github.com/HimanshuTamoli24/fullstack-assignment.git
+cd fullstack-assignment
 ```
 
-### Consumer Applications (`/apps`)
+### 3. Environment Variables
 
-- [**`apps/web`**](file:///c:/dev-work/desktop/github-prod/apps/web): Next.js 16 Web Dashboard using App Router, Tailwind CSS, Lucide icons, and `@repo/ui` primitives. Queries the backend server through a client-side tRPC Promise client.
-- [**`apps/api`**](file:///c:/dev-work/desktop/github-prod/apps/api): Standalone Express backend server. Exposes:
-  - A `/health` Express status route.
-  - A `/trpc` endpoint mapping the shared tRPC router to Express requests.
-  - A `/docs` route rendering an interactive API documentation reference via Scalar from generated OpenAPI JSON specifications.
+Verify `.env` in the root directory contains your MongoDB URI:
 
-### Shared Workspace Packages (`/packages`)
+```env
+MONGODB_URI=mongodb://arnav:wJB6s7rds7yIPKVh@ac-1nysf1w-shard-00-00.ajggrve.mongodb.net:27017,ac-1nysf1w-shard-00-01.ajggrve.mongodb.net:27017,ac-1nysf1w-shard-00-02.ajggrve.mongodb.net:27017/?ssl=true&replicaSet=atlas-5wa56h-shard-0&authSource=admin&appName=Cluster0
+PORT=8000
+NEXT_PUBLIC_API_URL=http://localhost:8000
+JWT_SECRET=taskflow-super-secret-jwt-key-2026
+```
 
-- [**`packages/trpc`**](file:///c:/dev-work/desktop/github-prod/packages/trpc): Contains client definitions (`client/`) and server router endpoints (`server/`):
-  - `health`: Route for testing server status.
-  - `auth`: Mutation for creating users and generating JWT tokens.
-  - `user`: Queries/Mutations for profile management and account statuses.
-  - Custom authorization checking middleware (`isAuthenticated`) verifying cookie JWT headers.
-  - Custom error formatter returning user-friendly validation error titles and messages.
-- [**`packages/database`**](file:///c:/dev-work/desktop/github-prod/packages/database): Setup for Drizzle ORM client, schemas, and configurations:
-  - `models/user.ts`: Defines `usersTable` mapping `id` (UUID), `fullName`, `email`, `profileImageUrl`, `plan`, `credits`, `onboardingCompleted`, and timestamps.
-- [**`packages/services`**](file:///c:/dev-work/desktop/github-prod/packages/services): Implements core backend business logic.
-  - `UserService`: Methods for `createUserWithEmailAndPassword` (with custom HMAC salt hashing), profile retrieval, updating profile, and fetching plan limits.
-- [**`packages/env`**](file:///c:/dev-work/desktop/github-prod/packages/env): Runtime environmental variable parsing using Zod schemas. Validates key credentials (e.g. `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, etc.) before allowing execution.
-- [**`packages/logger`**](file:///c:/dev-work/desktop/github-prod/packages/logger): Lightweight Winston-based JSON logging library supporting colored console output during local development.
-- [**`packages/ui`**](file:///c:/dev-work/desktop/github-prod/packages/ui): Workspace component library using Tailwind v4. Exports pre-built shadcn-like visual elements (e.g. `Button`, `Input`, `Dialog`).
-- [**`packages/validators`**](file:///c:/dev-work/desktop/github-prod/packages/validators): Shared validation definitions for payloads.
-- [**`packages/typescript-config`** / **`packages/eslint-config`**](file:///c:/dev-work/desktop/github-prod/packages/typescript-config): Presets for TS compiler checks and lint validation rules.
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-Ensure you have the following installed on your system:
-
-- **Node.js** (Version >= 18.x)
-- **PNPM** (Version >= 9.x)
-- **PostgreSQL** running instance
-
-### 1. Install Dependencies
-
-Install all workspaces node modules from the root directory:
+### 4. Install Dependencies
 
 ```bash
 pnpm install
 ```
 
-### 2. Configure Environment Variables
+### 5. Seed the Database
 
-Create a `.env` file in the root directory:
-
-```env
-# Database Connections
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/db"
-
-# Google Gemini API (Placeholder)
-GEMINI_API_KEY="dummy_gemini_api_key"
-
-# Supabase Auth / SDK Configuration
-NEXT_PUBLIC_SUPABASE_URL="https://dummy-project.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="dummy-anon-key"
-SUPABASE_SERVICE_ROLE_KEY="dummy-service-role-key"
-
-# Authentication Configs
-BETTER_AUTH_SECRET="dummy-better-auth-secret"
-BETTER_AUTH_URL="http://localhost:3000"
-JWT_SECRET="your-jwt-signing-secret"
-```
-
-### 3. Initialize Database Migrations
-
-Generate schema assets and apply migrations onto the PostgreSQL engine:
+Populate MongoDB Atlas with users, projects, tasks, deadline revision history, and comments:
 
 ```bash
-# Generate SQL migration scripts
-pnpm run db:generate
-
-# Apply migrations to database engine
-pnpm run db:migrate
+pnpm --filter @repo/database seed
 ```
 
-### 4. Run Development Server
+### 6. Run the Development Server
+
+Start both Next.js frontend (Port `3000`) and Express tRPC API server (Port `8000`):
 
 ```bash
-pnpm run dev
+pnpm dev
 ```
 
-This command runs the local dev tasks in parallel using Turborepo and loaded environmental configurations via `dotenv-cli`:
-
-- **Next.js Web Panel** runs on `http://localhost:3000`
-- **Express Backend Gateway** runs on `http://localhost:8000`
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## ⚡ Workspace Task Commands
-
-Run project tasks across all workspaces using the root Turborepo runner:
+## 🧪 Verification & Typechecking
 
 ```bash
-# Build production bundle for all workspaces
-pnpm run build
+# Run TypeScript validation across all 11 workspace packages
+pnpm check-types
 
-# Run ESLint validation checks
-pnpm run lint
-
-# Format code files using Prettier configuration
-pnpm run format
-
-# Run TS type compilation verification
-pnpm run check-types
+# Build production bundles
+pnpm build
 ```
+
+---
+
+## 📂 Project Structure
+
+```
+├── apps/
+│   ├── api/                    # Express + tRPC + Scalar OpenAPI Docs server
+│   │   └── src/
+│   │       ├── index.ts        # HTTP bootstrap & MongoDB connection
+│   │       └── server.ts       # tRPC & OpenAPI middleware configuration
+│   └── web/                    # Next.js 16 App Router application
+│       ├── app/                # Root layout, global Tailwind styles & home page
+│       ├── components/         # KanbanBoard, TaskDetailModal, TaskList, Nav, etc.
+│       ├── context/            # AuthContext & Demo Persona manager
+│       └── trpc/               # React Query & tRPC client bindings
+├── packages/
+│   ├── database/               # Mongoose models (User, Project, Task, Comment, Activity) & seed script
+│   ├── env/                    # Type-safe environment validation with Zod
+│   ├── services/               # Modular business logic layer (User, Project, Task, Comment, Activity)
+│   ├── trpc/                   # Routers, procedures, JWT auth middleware & OpenAPI paths
+│   └── ui/                     # Shared UI component library (shadcn/ui primitives)
+├── docker-compose.yml          # Container configuration
+├── turbo.json                  # Turborepo task pipeline orchestration
+└── README.md                   # Complete documentation
+```
+
+---
+
+## 🛡️ Security & Best Practices
+
+- **Role-Based Middlewares**: Protected with `adminProcedure` and `protectedProcedure` in tRPC.
+- **Password Security**: Salted SHA-256 password hashing with crypto random bytes.
+- **JWT Authorization**: Bearer token authentication with 7-day expiration.
+- **Audit Logging**: Every status transition and deadline modification is logged with user attribution and timestamp.
