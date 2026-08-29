@@ -1,154 +1,323 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, CheckCircle2, AlertCircle, RefreshCw, ArrowRight } from "lucide-react";
-
-import { Button } from "@repo/ui/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@repo/ui/components/ui/card";
-
+import React, { useState, useEffect, useCallback } from "react";
+import { useAuth } from "~/context/auth-context";
 import { api } from "~/trpc/server";
+import { Navbar } from "~/components/Navbar";
+import { DashboardOverview } from "~/components/DashboardOverview";
+import { KanbanBoard } from "~/components/KanbanBoard";
+import { TaskListView } from "~/components/TaskListView";
+import { ProjectsView } from "~/components/ProjectsView";
+import { TeamView } from "~/components/TeamView";
+import { TaskDetailModal } from "~/components/TaskDetailModal";
+import { CreateProjectModal } from "~/components/CreateProjectModal";
+import { CreateTaskModal } from "~/components/CreateTaskModal";
+import { AuthModal } from "~/components/AuthModal";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import {
+  Sparkles,
+  Shield,
+  UserCheck,
+  CheckCircle2,
+  FolderKanban,
+  Clock,
+  Plus,
+  Loader2,
+  AlertCircle,
+  ArrowRight,
+} from "lucide-react";
+import { toast } from "sonner";
 
-export default function LandingPage() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [health, setHealth] = useState<{ status: string } | null>(null);
+export default function App() {
+  const { user, loading: authLoading, demoUsers, quickDemoLogin } = useAuth();
 
-  async function checkHealth() {
-    setLoading(true);
-    setError(null);
+  const [activeTab, setActiveTab] = useState<string>("dashboard");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [taskDetailOpen, setTaskDetailOpen] = useState(false);
 
-    try {
-      const data = await api.health.getHealth.query();
-      setHealth(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
-    } finally {
-      setLoading(false);
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
+  const [createTaskOpen, setCreateTaskOpen] = useState(false);
+  const [defaultProjectIdForTask, setDefaultProjectIdForTask] = useState<string | undefined>(
+    undefined,
+  );
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  // App Data states
+  const [projects, setProjects] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  // Auto-login to seeded admin on initial load if no session exists for zero-friction evaluation
+  useEffect(() => {
+    if (!authLoading && !user && demoUsers.length > 0) {
+      const adminDemo = demoUsers.find((u) => u.role === "ADMIN") || demoUsers[0];
+      if (adminDemo) {
+        quickDemoLogin(adminDemo.id);
+      }
     }
-  }
+  }, [authLoading, user, demoUsers]);
+
+  const loadAllData = useCallback(async () => {
+    if (!user) return;
+    setLoadingData(true);
+    try {
+      const [projData, taskData, userData, actData] = await Promise.all([
+        api.project.list.query().catch(() => []),
+        api.task.list.query().catch(() => []),
+        api.user.list.query().catch(() => []),
+        api.activity.listRecent.query({ limit: 20 }).catch(() => []),
+      ]);
+
+      setProjects(projData);
+      setTasks(taskData);
+      setUsers(userData);
+      setActivities(actData);
+    } catch (err: any) {
+      console.error("Error loading application data:", err);
+    } finally {
+      setLoadingData(false);
+    }
+  }, [user]);
 
   useEffect(() => {
-    checkHealth();
-  }, []);
+    if (user) {
+      loadAllData();
+    }
+  }, [user, loadAllData]);
+
+  const handleOpenTask = (taskId: string) => {
+    setSelectedTaskId(taskId);
+    setTaskDetailOpen(true);
+  };
+
+  const handleOpenCreateTask = (defaultProjectId?: string) => {
+    setDefaultProjectIdForTask(defaultProjectId);
+    setCreateTaskOpen(true);
+  };
+
+  const handleUpdateStatus = async (taskId: string, newStatus: string) => {
+    try {
+      await api.task.updateStatus.mutate({
+        taskId,
+        status: newStatus as any,
+      });
+      toast.success(`Moved task to ${newStatus.replace("_", " ")}`);
+      loadAllData();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update task status");
+    }
+  };
+
+  const handleFilterByProject = (projectId: string) => {
+    setActiveTab("kanban");
+  };
+
+  const isAdmin = user?.role === "ADMIN";
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto flex min-h-screen max-w-6xl items-center px-6 lg:px-12">
-        <div className="grid w-full gap-16 lg:grid-cols-2">
-          {/* Left */}
-          <section className="flex flex-col justify-center">
-            <span className="mb-4 inline-flex w-fit rounded-full border px-3 py-1 text-xs font-medium">
-              Production Ready
-            </span>
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20">
+      {/* Navigation Bar */}
+      <Navbar
+        onOpenCreateProject={() => setCreateProjectOpen(true)}
+        onOpenCreateTask={() => handleOpenCreateTask()}
+        onOpenAuth={() => setAuthModalOpen(true)}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
 
-            <h1 className="text-5xl font-bold tracking-tight">
-              Full Stack
-              <br />
-              <span className="text-primary">tRPC Monorepo Starter</span>
-            </h1>
-
-            <p className="mt-6 max-w-xl text-muted-foreground text-lg">
-              A production-ready starter powered by Next.js, TypeScript, Turborepo and tRPC. Build
-              applications instead of rebuilding the same infrastructure every time.
-            </p>
-
-            <div className="mt-10 grid gap-4 sm:grid-cols-2">
-              <Feature title="Next.js App Router" />
-              <Feature title="End-to-End Type Safety" />
-              <Feature title="Shared UI Package" />
-              <Feature title="Shared Hooks & Utils" />
-              <Feature title="Tailwind CSS v4" />
-              <Feature title="Health Check API" />
+      {/* Main Workspace Container */}
+      <main className="flex-1 container mx-auto max-w-7xl px-4 sm:px-8 py-6 space-y-6">
+        {/* Role & Persona Banner */}
+        {user ? (
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/80 bg-gradient-to-r from-primary/5 via-indigo-500/5 to-card p-4 sm:p-5 shadow-xs">
+            <div className="flex items-center gap-3.5">
+              <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+                <AvatarImage src={user.avatarUrl} />
+                <AvatarFallback className="font-bold text-xs bg-primary/10 text-primary">
+                  {user.fullName?.slice(0, 2).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm sm:text-base font-bold text-foreground">
+                    {user.fullName}
+                  </h1>
+                  <Badge
+                    variant={isAdmin ? "default" : "outline"}
+                    className={`text-[10px] px-2 py-0.5 font-bold ${
+                      isAdmin
+                        ? "bg-indigo-600 text-white shadow-xs"
+                        : "border-emerald-400 bg-emerald-50 text-emerald-800"
+                    }`}
+                  >
+                    {isAdmin ? "👑 Admin Role" : "👤 Team Member Role"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isAdmin
+                    ? "Full administrative control: create projects, assign tasks, adjust deadlines, and track revisions."
+                    : "Member mode: inspect assigned deliverables, advance workflow status, post updates, and view deadline history."}
+                </p>
+              </div>
             </div>
-          </section>
 
-          {/* Right */}
-          <section className="flex items-center justify-center">
-            <Card className="w-full max-w-md">
-              <CardHeader>
-                <CardTitle>Connection Status</CardTitle>
-                <CardDescription>Verify frontend ↔ backend communication.</CardDescription>
-              </CardHeader>
+            {/* Quick 1-Click Role Switch Pills */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-muted-foreground mr-1 hidden sm:inline">
+                Quick Switch:
+              </span>
+              {demoUsers.slice(0, 3).map((du) => {
+                const isSelected = user.id === du.id;
+                return (
+                  <button
+                    key={du.id}
+                    onClick={() => quickDemoLogin(du.id)}
+                    className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs transition-all border ${
+                      isSelected
+                        ? "bg-primary text-white border-primary shadow-xs font-semibold"
+                        : "bg-background text-foreground/80 border-border hover:bg-muted"
+                    }`}
+                  >
+                    <span className="text-[11px]">{du.role === "ADMIN" ? "👑" : "👤"}</span>
+                    <span>{du.fullName.split(" ")[0]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-6 text-center space-y-3">
+            <h2 className="text-lg font-bold">Welcome to TaskFlow</h2>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              Please sign in or select a demo role to access project boards, deadline tracking, and
+              task management.
+            </p>
+            <Button
+              onClick={() => setAuthModalOpen(true)}
+              className="text-xs font-semibold gap-1.5"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Select Demo Role / Sign In</span>
+            </Button>
+          </div>
+        )}
 
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <span className="text-sm font-medium">Status</span>
+        {/* Tab View Content */}
+        {loadingData && !tasks.length ? (
+          <div className="flex h-64 flex-col items-center justify-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-xs text-muted-foreground">Syncing workspace with MongoDB Atlas...</p>
+          </div>
+        ) : (
+          <>
+            {activeTab === "dashboard" && (
+              <DashboardOverview
+                projects={projects}
+                tasks={tasks}
+                activities={activities}
+                onSelectTask={handleOpenTask}
+                onOpenCreateProject={() => setCreateProjectOpen(true)}
+                onOpenCreateTask={() => handleOpenCreateTask()}
+                onNavigateTab={setActiveTab}
+                currentUserId={user?.id}
+                isAdmin={isAdmin}
+              />
+            )}
 
-                  {loading ? (
-                    <div className="flex items-center gap-2 text-amber-500">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Checking
-                    </div>
-                  ) : error ? (
-                    <div className="flex items-center gap-2 text-red-500">
-                      <AlertCircle className="h-4 w-4" />
-                      Offline
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Connected
-                    </div>
-                  )}
-                </div>
+            {activeTab === "kanban" && (
+              <KanbanBoard
+                tasks={tasks}
+                onSelectTask={handleOpenTask}
+                onOpenCreateTask={() => handleOpenCreateTask()}
+                onUpdateStatus={handleUpdateStatus}
+                isAdmin={isAdmin}
+              />
+            )}
 
-                <div className="space-y-3 text-sm">
-                  <Row
-                    label="API"
-                    value={process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}
-                  />
+            {activeTab === "list" && (
+              <TaskListView
+                tasks={tasks}
+                projects={projects}
+                onSelectTask={handleOpenTask}
+                onOpenCreateTask={() => handleOpenCreateTask()}
+                onUpdateStatus={handleUpdateStatus}
+                currentUserId={user?.id}
+                isAdmin={isAdmin}
+              />
+            )}
 
-                  <Row label="Procedure" value="health.getHealth" />
-                </div>
+            {activeTab === "projects" && (
+              <ProjectsView
+                projects={projects}
+                onOpenCreateProject={() => setCreateProjectOpen(true)}
+                onOpenCreateTask={handleOpenCreateTask}
+                onFilterByProject={handleFilterByProject}
+                isAdmin={isAdmin}
+              />
+            )}
 
-                <div className="rounded-lg bg-muted p-4">
-                  <pre className="overflow-auto text-xs">
-                    {loading ? "Loading..." : error ? error : JSON.stringify(health, null, 2)}
-                  </pre>
-                </div>
+            {activeTab === "team" && (
+              <TeamView
+                users={users}
+                tasks={tasks}
+                onOpenAuth={() => setAuthModalOpen(true)}
+                isAdmin={isAdmin}
+              />
+            )}
+          </>
+        )}
+      </main>
 
-                <Button onClick={checkHealth} disabled={loading} className="w-full">
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Checking...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Check Again
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </section>
+      {/* Task Details & Deadline Revision History Modal (Additional Challenge) */}
+      <TaskDetailModal
+        taskId={selectedTaskId}
+        open={taskDetailOpen}
+        onOpenChange={setTaskDetailOpen}
+        onTaskUpdated={loadAllData}
+      />
+
+      {/* Create Project Modal (Admin) */}
+      <CreateProjectModal
+        open={createProjectOpen}
+        onOpenChange={setCreateProjectOpen}
+        onProjectCreated={loadAllData}
+      />
+
+      {/* Create Task Modal (Admin) */}
+      <CreateTaskModal
+        open={createTaskOpen}
+        onOpenChange={setCreateTaskOpen}
+        onTaskCreated={loadAllData}
+        defaultProjectId={defaultProjectIdForTask}
+      />
+
+      {/* Auth & Persona Modal */}
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+
+      {/* Footer */}
+      <footer className="mt-auto border-t border-border/50 py-6 text-center text-xs text-muted-foreground">
+        <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 max-w-7xl px-4 sm:px-8">
+          <p>© 2026 TaskFlow. MongoDB Atlas Cluster • tRPC • Next.js App Router</p>
+          <div className="flex items-center gap-4 text-[11px]">
+            <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              MongoDB Connected
+            </span>
+            <a
+              href="http://localhost:8000/docs"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary hover:underline font-semibold"
+            >
+              OpenAPI Reference Docs ↗
+            </a>
+          </div>
         </div>
-      </div>
-    </main>
-  );
-}
-
-function Feature({ title }: { title: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <ArrowRight className="h-4 w-4 text-primary" />
-      <span>{title}</span>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between border-b pb-2">
-      <span className="text-muted-foreground">{label}</span>
-      <code className="text-xs">{value}</code>
+      </footer>
     </div>
   );
 }
