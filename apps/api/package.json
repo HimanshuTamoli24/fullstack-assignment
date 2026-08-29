@@ -22,6 +22,8 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@repo/database": "workspace:*",
+    "@repo/services": "workspace:*",
     "@repo/env": "workspace:^",
     "@repo/logger": "workspace:*",
     "@repo/trpc": "workspace:*",

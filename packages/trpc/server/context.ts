@@ -1,11 +1,12 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import { createClient } from "@supabase/supabase-js";
-import { env } from "@repo/env";
+import { userService } from "@repo/services";
 import { createCookieFactory, clearCookieFactory, getCookieFactory } from "./utils/cookie";
 
 export interface AuthUser {
   id: string;
   email: string;
+  role: "ADMIN" | "MEMBER";
+  fullName: string;
 }
 
 export interface TRPCContext {
@@ -21,22 +22,20 @@ export async function createContext({
 }: CreateExpressContextOptions): Promise<TRPCContext> {
   let user: AuthUser | null = null;
 
-  // Read JWT from Authorization: Bearer <token> header
+  // Read JWT from Authorization: Bearer <token> header or cookie
   const authHeader = req.headers.authorization;
-  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const headerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const cookieToken = req.cookies?.["taskflow_token"] || req.cookies?.["auth_token"];
+  const token = headerToken || cookieToken;
 
   if (token) {
-    // Use service-role key so this client can verify any user's JWT
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false },
-    });
-
-    const { data, error } = await supabase.auth.getUser(token);
-
-    if (!error && data.user?.email) {
+    const verified = await userService.verifyToken(token);
+    if (verified) {
       user = {
-        id: data.user.id,
-        email: data.user.email,
+        id: verified.userId,
+        email: verified.email,
+        role: verified.role,
+        fullName: verified.fullName,
       };
     }
   }
